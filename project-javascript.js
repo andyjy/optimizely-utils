@@ -12,13 +12,15 @@
  * and observe an immediate reduction in the number of times you wish to poke yourself in the eye.
  */
 
+window.optimizelyUtils = window.optimizelyUtils || {};
+
 /**
  * Wrap your variation javascript code within a call to this function
  * to circumvent Optimizely's silent dropping of errors that will otherwise drive you nuts.
  *
- * e.g. wrapCode(function() { $('element').html('..your changes here..'); });
+ * e.g. window.optimizelyUtils.wrapCode(function() { $('element').html('..your changes here..'); });
  */
-function wrapCode(f) {
+window.optimizelyUtils.wrapCode = function(f) {
   try {
     // initialise window.sitehound - Optimizely (probably) executes before Google Tag Manager
     window.analytics = window.analytics || [];
@@ -28,7 +30,7 @@ function wrapCode(f) {
 
   } catch (e) {
     // catch + report on JS errors
-    error(e.name + '; ' + e.message);
+    window.optimizelyUtils.error(e.name + '; ' + e.message);
     window.analytics.push([
       'track',
       'Optimizely JS Error',
@@ -47,14 +49,14 @@ function wrapCode(f) {
  * param       f function
  * param  object object (optional - defaults to window) 
  */
-function waitFor(key, f, object) {
+window.optimizelyUtils.waitFor = function(key, f, object) {
   var o = object || window;
   if (typeof key === 'function') {
     // key is a function - execute f() as soon as it returns true
     if (key()) {
       f();
     } else {
-      setTimeout(function() { waitFor(key, f, object); }, 100);
+      setTimeout(function() { window.optimizelyUtils.waitFor(key, f, object); }, 100);
     }
   } else {
     // key is a string key of (object || window)
@@ -63,7 +65,7 @@ function waitFor(key, f, object) {
     for (var i = 0; i < keys.length; i++) {
       if (typeof o[keys[i]] === 'undefined') {
         // not available yet
-        setTimeout(function() { waitFor(key, f, object); }, 50);
+        setTimeout(function() { window.optimizelyUtils.waitFor(key, f, object); }, 50);
         return;
       }
       // else - object.key is now available
@@ -77,7 +79,7 @@ function waitFor(key, f, object) {
 /**
  * helper for error logging to console
  */
-function error(msg) {
+window.optimizelyUtils.error = function(msg) {
   if (!window.console) {
     return;
   }
