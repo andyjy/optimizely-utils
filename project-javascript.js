@@ -37,7 +37,7 @@ window.optimizelyUtils.wrapCode = function(f) {
       {name: e.name, message: e.message}
     ]);
   }
-}
+};
 
 /**
  * Wrap your custom Conditional Activation Mode functions within a call to this function
@@ -51,7 +51,7 @@ window.optimizelyUtils.wrapActivationFunction = function(f) {
       f(activate, options);
     });
   };
-}
+};
 
 /**
  * Wait to execute a given function until we have a given condition:
@@ -88,7 +88,7 @@ window.optimizelyUtils.waitFor = function(key, f, object) {
     // execute f()
     f();
   }
-}
+};
 
 /**
  * helper for error logging to console
@@ -102,4 +102,4 @@ window.optimizelyUtils.error = function(msg) {
   } else if (console.log) {
     console.log('[ERROR] ' + msg);
   }
-}
+};
