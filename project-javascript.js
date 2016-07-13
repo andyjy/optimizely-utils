@@ -1,5 +1,5 @@
 /**
- * optimizely-utils.js
+ * project-javascript.js
  * https://github.com/andyyoung/optimizely-utils
  *
  * @version   0.1, 12th July 2016
@@ -21,9 +21,9 @@
 function wrapCode(f) {
   try {
     // initialise window.sitehound - Optimizely (probably) executes before Google Tag Manager
-  	window.analytics = window.analytics || [];
+    window.analytics = window.analytics || [];
   	
-  	// do whatever we really wanted to do
+    // do whatever we really wanted to do
     f();
 
   } catch (e) {
@@ -50,7 +50,7 @@ function wrapCode(f) {
 function waitFor(key, f, object) {
   var o = object || window;
   if (typeof key === 'function') {
-	  // key is a function - execute f() as soon as it returns true
+    // key is a function - execute f() as soon as it returns true
     if (key()) {
       f();
     } else {
