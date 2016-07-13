@@ -40,6 +40,20 @@ window.optimizelyUtils.wrapCode = function(f) {
 }
 
 /**
+ * Wrap your custom Conditional Activation Mode functions within a call to this function
+ * to circumvent Optimizely's silent dropping of errors that will otherwise drive you nuts.
+ *
+ * e.g. window.optimizelyUtils.wrapActivationFunction(function(activate, options) { ... });
+ */
+window.optimizelyUtils.wrapActivationFunction = function(f) {
+  return function(activate, options) {
+    window.optimizelyUtils.wrapCode(function() {
+      f(activate, options);
+    });
+  };
+}
+
+/**
  * Wait to execute a given function until we have a given condition:
  * - global variable is set (ie. `window[key]`)
  * - key of an object is set
