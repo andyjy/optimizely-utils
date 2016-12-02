@@ -157,3 +157,78 @@ window.optimizelyUtils.error = function(msg) {
     console.log('[ERROR] ' + msg);
   }
 };
+
+/**
+ * easy event tracking for element click/change/focus/submit
+ */
+window.setInterval(function() {
+    $('*[data-track], *[data-track-focus], *[data-track-copy]').filter(':not([data-tracked])').map(function(a, e) {
+        e.dataset.tracked = 1;
+        var properties = {};
+        if (e.innerText && e.tagName != 'FORM') {
+            properties['Element text'] = e.innerText;
+        }
+        if (e.href) {
+            properties['Element URL'] = e.href;
+        }
+        if (e.id) {
+            properties['Element ID'] = e.id;
+        }
+        if (e.dataset.track) {
+            switch (e.tagName) {
+                case 'INPUT':
+                case 'TEXTAREA':
+                case 'SELECT':
+                    $(e).on('change', function() {
+                        var props = properties;
+                        props.action = e.dataset.track;
+                        props.interactionType = 'field_change';
+                        props['Element value'] = $(e).val ? $(e).val() : '';
+                        sitehound.push(['track', 'Experiment Interaction', props]);
+                        window.optimizely.push(['trackEvent', e.dataset.track]); 
+                    });
+                    break;
+
+                case 'FORM':
+                    var props = properties;
+                    props.action = e.dataset.track;
+                    props.interactionType = 'form_submit';
+                    sitehound.push(['trackForm', e, 'Experiment Interaction', props]);
+                    $(e).on('submit', function() {     
+                        window.optimizely.push(['trackEvent', e.dataset.track]); 
+                    });
+                    break;
+
+                default:
+                    var props = properties;
+                    props.action = e.dataset.track;
+                    props.interactionType = 'click';
+                    sitehound.push(['trackLink', e, 'Experiment Interaction', props]);
+                    $(e).on('mousedown', function() {     
+                        window.optimizely.push(['trackEvent', e.dataset.track]); 
+                    });
+            }
+        }
+        if (e.dataset.trackFocus) {
+            $(e).on('focus', function() {
+                var props = properties;
+                props.action = e.dataset.trackFocus;
+                props.interactionType = 'focus';
+                sitehound.push(['track', 'Experiment Interaction', props]);
+                window.optimizely.push(['trackEvent', e.dataset.trackFocus]); 
+            });
+        }
+        if (e.dataset.trackCopy) {
+            $(e).on('copy', function() {
+                var props = properties;
+                if ($(e).val) {
+                    props['Element value'] = $(e).val();
+                }
+                props.action = e.dataset.trackCopy;
+                props.interactionType = 'copy';
+                sitehound.push(['track', 'Experiment Interaction', props]);
+                window.optimizely.push(['trackEvent', e.dataset.trackCopy]); 
+            });
+        }
+    });
+}, 250);
