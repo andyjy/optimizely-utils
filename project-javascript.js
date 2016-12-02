@@ -2,7 +2,7 @@
  * project-javascript.js
  * https://github.com/andyyoung/optimizely-utils
  *
- * @version   0.1, 12th July 2016
+ * @version   0.2, 1st Dec 2016
  *
  * @author    Andy Young  https://twitter.com/@andyy
  * @licence   MIT
@@ -12,7 +12,9 @@
  * and observe an immediate reduction in the number of times you wish to poke yourself in the eye.
  */
 
-window.optimizelyUtils = window.optimizelyUtils || {};
+var u = window.optimizelyUtils = window.optimizelyUtils || {};
+window.optimizely = window.optimizely || [];
+window.sitehound = window.sitehound || [];
 
 /**
  * Wrap your variation javascript code within a call to this function
@@ -20,17 +22,14 @@ window.optimizelyUtils = window.optimizelyUtils || {};
  *
  * e.g. window.optimizelyUtils.wrapCode(function() { $('element').html('..your changes here..'); });
  */
-window.optimizelyUtils.wrapCode = function(f) {
+u.wrapCode = function(f) {
   try {
-    // initialise window.sitehound - Optimizely (probably) executes before Google Tag Manager
-    window.analytics = window.analytics || [];
-  	
     // do whatever we really wanted to do
     f();
-
   } catch (e) {
     // catch + report on JS errors
     window.optimizelyUtils.error(e.name + '; ' + e.message);
+    window.analytics = window.analytics || [];
     window.analytics.push([
       'track',
       'Optimizely JS Error',
@@ -45,13 +44,68 @@ window.optimizelyUtils.wrapCode = function(f) {
  *
  * e.g. window.optimizelyUtils.wrapActivationFunction(function(activate, options) { ... });
  */
-window.optimizelyUtils.wrapActivationFunction = function(f) {
+u.wrapActivationFunction = function(f) {
   return function(activate, options) {
     window.optimizelyUtils.wrapCode(function() {
       f(activate, options);
     });
   };
 };
+
+/**
+ * Track scroll events as Optimizely custom events and via SiteHound analytics
+ */
+var s = u.detectScroll = u.detectScroll || {};
+
+// fire a scroll event for each time the user has scrolled to view this many pixels
+// from the top of the page
+s.interval = s.interval || 500;
+s.scrolled = [];
+
+s.scrollHandler = function() {
+  if (!window.optimizely || !window.optimizely.activeExperiments || !window.optimizely.activeExperiments.length) {
+    // no active experiments
+    return;
+  }
+  var docHeight = $(document.body).height(),
+    scrollDistance = $(window).scrollTop() + $(window).height();
+
+  if (s.scrolled.indexOf(0) == -1) {
+    s.scrolled.push(0);
+    window.sitehound.push([
+      'track', 'Experiment Interaction', {interactionType: 'scroll'}
+    ]);
+    window.optimizely.push(["trackEvent", 'scrolled']);
+  }
+
+  if (scrollDistance > docHeight - 100 && s.scrolled.indexOf('bottom') == -1) {
+    s.scrolled.push('bottom');
+    window.sitehound.push([
+      'track', 'Experiment Interaction', {interactionType: 'scroll', scrollDepth: 'bottom'}
+    ]);
+    window.optimizely.push(["trackEvent", 'scroll_bottom']);
+  }
+
+  for (var i = 2; i < docHeight / s.interval; i++) {
+    if (scrollDistance >= i * s.interval && s.scrolled.indexOf(i) == -1) {
+      s.scrolled.push(i);
+      window.optimizely.push([
+        'trackEvent', 'scroll_' + (i * s.interval) + 'px'
+      ]);
+      window.sitehound.push([
+        'track', 'Experiment Interaction',
+        {interactionType: 'scroll', 'scrollDepth': (i * s.interval) + 'px'}
+      ]);
+    }
+  }
+}
+
+s.trackScroll = function() {
+  $(window).scroll(s.scrollHandler);
+}
+
+s.trackScroll();
+
 
 /**
  * Wait to execute a given function until we have a given condition:
