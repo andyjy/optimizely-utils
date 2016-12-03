@@ -59,7 +59,7 @@ var s = u.detectScroll = u.detectScroll || {};
 
 // fire a scroll event for each time the user has scrolled to view this many pixels
 // from the top of the page
-s.interval = s.interval || 500;
+s.interval = s.interval || 1000;
 s.scrolled = [];
 
 s.scrollHandler = function() {
@@ -86,7 +86,7 @@ s.scrollHandler = function() {
     window.optimizely.push(["trackEvent", 'scroll_bottom']);
   }
 
-  for (var i = 2; i < docHeight / s.interval; i++) {
+  for (var i = 1; i < docHeight / s.interval; i++) {
     if (scrollDistance >= i * s.interval && s.scrolled.indexOf(i) == -1) {
       s.scrolled.push(i);
       window.optimizely.push([
@@ -98,11 +98,11 @@ s.scrollHandler = function() {
       ]);
     }
   }
-}
+};
 
 s.trackScroll = function() {
   $(window).scroll(s.scrollHandler);
-}
+};
 
 s.trackScroll();
 
@@ -162,7 +162,7 @@ window.optimizelyUtils.error = function(msg) {
  * easy event tracking for element click/change/focus/submit
  */
 window.setInterval(function() {
-    $('*[data-track], *[data-track-focus], *[data-track-copy]').filter(':not([data-tracked])').map(function(a, e) {
+    $('*[data-track], *[data-track-click], *[data-track-focus], *[data-track-copy]').filter(':not([data-tracked])').map(function(a, e) {
         e.dataset.tracked = 1;
         var properties = {};
         if (e.innerText && e.tagName != 'FORM') {
@@ -200,14 +200,33 @@ window.setInterval(function() {
                     break;
 
                 default:
-                    var props = properties;
-                    props.action = e.dataset.track;
-                    props.interactionType = 'click';
-                    sitehound.push(['trackLink', e, 'Experiment Interaction', props]);
-                    $(e).on('mousedown', function() {     
-                        window.optimizely.push(['trackEvent', e.dataset.track]); 
-                    });
+                    if ($(e).attr('href') == '#') {
+                        $(e).on('click', function() {
+                            var props = properties;
+                            props.action = e.dataset.track;
+                            props.interactionType = 'click';
+                            sitehound.push(['track', 'Experiment Interaction', props]);
+                            window.optimizely.push(['trackEvent', e.dataset.track]); 
+                        });                      
+                    } else {
+                        var props = properties;
+                        props.action = e.dataset.track;
+                        props.interactionType = 'click';
+                        sitehound.push(['trackLink', e, 'Experiment Interaction', props]);
+                        $(e).on('mousedown', function() {     
+                            window.optimizely.push(['trackEvent', e.dataset.track]); 
+                        });
+                    }
             }
+        }
+        if (e.dataset.trackClick) {
+            $(e).on('click', function() {
+                var props = properties;
+                props.action = e.dataset.trackClick;
+                props.interactionType = 'click';
+                sitehound.push(['track', 'Experiment Interaction', props]);
+                window.optimizely.push(['trackEvent', e.dataset.trackClick]); 
+            });
         }
         if (e.dataset.trackFocus) {
             $(e).on('focus', function() {
